@@ -1,0 +1,54 @@
+pipeline {
+    agent any 
+    stages{
+        stage("checkout"){
+            steps{
+               cleanWs()
+               checkout scmGit(branches: [[name: '*/${Branch_Name}']], 
+               userRemoteConfigs: [[url: '${Git_hub_url}']]) 
+
+            }
+        }
+        stage("build-jar-file"){
+            steps{
+               sh "mvn clean"
+               sh "mvn install"  
+            }
+        }
+        stage("build-the-image"){
+            steps{
+         sh "echo purushoth | sudo -S docker build -t ${Image_Name} ." 
+            //sh "sudo docker build -t ${Image_Name} ."
+            }
+        }
+        // stage("checking-the-port"){
+        //     steps{
+        //         sh"sudo lsof -i:8089"
+        //         script {
+        //             if("true" =="true")
+        //             sh"no"
+        //         }
+        //     }
+        // }
+        stage("container-check"){
+            steps{
+                sh "sudo docker run -d -p ${Container_Port}:8080 ${Image_Name}"
+            }
+        }
+        stage("Tag-image"){
+            steps{
+                sh "sudo docker tag ${Image_name} purushothshanmugam/springbootapplication:${Tag_version}"
+            }
+        }
+        stage("push-the-image-to-dockerhub"){
+            steps{
+                sh"sudo docker push purushothshanmugam/springbootapplication:${Tag_version}"
+            }
+        }
+        stage("pull the images from docker hub"){
+            steps{
+            sh "sudo docker pull purushothshanmugam/springbootapplication:${Tag_version} "
+        }
+        }
+    }
+}
