@@ -17,7 +17,7 @@ public class NewspringApplication {
 		return "hello spring";
 	}
     
-	@GetMapping(value = "/spring")
+	@GetMapping(value = "/testing")
 	public String testing(){
 		return "working";
 	}
