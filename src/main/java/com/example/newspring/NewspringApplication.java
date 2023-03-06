@@ -21,4 +21,8 @@ public class NewspringApplication {
 	public String testing(){
 		return "working";
 	}
+     @GetMapping(value = "/sample")
+	public String sample(){
+		return "working";
+	}
 }
