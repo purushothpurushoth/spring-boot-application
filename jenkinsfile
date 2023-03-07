@@ -1,23 +1,23 @@
 pipeline {
-    agent any 
+    agent any
     stages{
         stage("checkout"){
             steps{
                cleanWs()
-               checkout scmGit(branches: [[name: '*/${Branch_Name}']], 
-               userRemoteConfigs: [[url: '${Git_hub_url}']]) 
+               checkout scmGit(branches: [[name: '*/${Branch_Name}']],
+               userRemoteConfigs: [[url: '${Git_hub_url}']])
 
             }
         }
         stage("build-jar-file"){
             steps{
                sh "mvn clean"
-               sh "mvn install"  
+               sh "mvn install"
             }
         }
         stage("build-the-image"){
             steps{
-         sh "echo purushoth | sudo -S docker build -t ${Image_Name} ." 
+         sh "echo purushoth | sudo -S docker build -t ${Image_Name} ."
             //sh "sudo docker build -t ${Image_Name} ."
             }
         }
@@ -30,11 +30,7 @@ pipeline {
         //         }
         //     }
         // }
-        stage("container-check"){
-            steps{
-                sh "sudo docker run -d -p ${Container_Port}:8080 ${Image_Name}"
-            }
-        }
+
         stage("Tag-image"){
             steps{
                 sh "sudo docker tag ${Image_name} purushothshanmugam/springbootapplication:${Tag_version}"
@@ -50,5 +46,47 @@ pipeline {
             sh "sudo docker pull purushothshanmugam/springbootapplication:${Tag_version} "
         }
         }
+
+        //  stage("container-check"){
+        //             steps{
+        //                 sh "sudo docker run -d -p ${Container_Port}:8080 purushothshanmugam/springbootapplication:${Tag_version}"
+        //                 sh "curl 172.17.0.1:8087/spring"
+        //             }
+        //   }
+
+          stage("container-check") {
+                steps {
+                script {
+                    def testExitCode = sh(script: 'sudo docker rm spring', returnStatus: true)
+                    if (testExitCode == 0) {
+                        sh "echo container removed successfully "
+                        sh 'sudo docker run -d -p ${Container_Port}:8080 --name spring purushothshanmugam/springbootapplication:${Tag_version} '
+                    } else {
+                          sh "echo container start"
+                         def code =sh(script:"sudo docker stop spring" ,returnStatus: true)
+                         if(code == 0){
+                         sh "sudo docker rm spring"
+                          sh 'sudo docker run -d -p ${Container_Port}:8080 --name spring purushothshanmugam/springbootapplication:${Tag_version} '
+                       }
+                    }
+                    }
+                }
+            }
+
+            stage(" curl-command"){
+                steps{
+                script{
+
+                def curl=sh(script:"/usr/bin/curl -LI 'localhost:8087/spring'", returnStatus:true)
+                if(curl == 0){
+                    sh "curl localhost:8087/spring"
+                }
+                else {
+                    sh " echo not working"
+                }
+            }
+                }
+            }
+
     }
 }
